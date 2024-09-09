@@ -1,6 +1,8 @@
 package org.example.expert.domain.manager.service;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.example.expert.config.JwtUtil;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.manager.dto.request.ManagerSaveRequest;
@@ -28,6 +30,7 @@ public class ManagerService {
     private final ManagerRepository managerRepository;
     private final UserRepository userRepository;
     private final TodoRepository todoRepository;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public ManagerSaveResponse saveManager(AuthUser authUser, long todoId, ManagerSaveRequest managerSaveRequest) {
@@ -73,8 +76,20 @@ public class ManagerService {
         return dtoList;
     }
 
+    public long userIdFromToken(String bearerToken) {
+
+        String token = bearerToken.substring(7);
+        Claims claims = jwtUtil.extractClaims(token);
+
+        return Long.parseLong(claims.getSubject());
+    }
+
+
     @Transactional
-    public void deleteManager(long userId, long todoId, long managerId) {
+    public void deleteManager(String bearerToken, long todoId, long managerId) {
+
+        Long userId = userIdFromToken(bearerToken);
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidRequestException("User not found"));
 
